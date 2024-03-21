@@ -12,6 +12,10 @@ pomodoro_duration = 25 * minute_seconds
 short_break_duration = 5 * minute_seconds
 long_break_duration = 15 * minute_seconds
 
+# Text Format
+BOLD = "\033[1m"
+RESET_FORMAT = "\033[0m"
+
 
 def set_cycle_type(cycle_number: int):
     # Long break every 8th cycle
@@ -40,10 +44,10 @@ def countdown(duration):
 def show_progress(count, message=None, is_series=False):
     current_time = str(datetime.now().time())[:5]
     if not is_series:
-        print(f"[Cycle {count:02d} at {current_time}]  {message}")
+        print(f"{BOLD}[Cycle {count:02d} at {current_time}]{RESET_FORMAT}  {message}")
     else:
         print(
-            f"[Series {count} at {current_time}]  Congratulations, you completed a set!"
+            f"{BOLD}[Series {count} at {current_time}]{RESET_FORMAT}  Congratulations, you completed a set!"
         )
 
 
@@ -61,5 +65,5 @@ while True:
             completed_series += 1
             show_progress(completed_series, is_series=True)
     except KeyboardInterrupt:
-        print("\n\n[Session ended]  Goodbye!")
+        print("\n\n[Session ended]  Good job!")
         exit()
