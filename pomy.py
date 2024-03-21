@@ -28,9 +28,7 @@ def set_cycle_type(cycle_number: int):
 
 
 # Functions
-def countdown(duration, cycle_msg):
-    start_time = str(datetime.now().time())[:5]
-    print(f"[Cycle {cycle_number:02d} at {start_time}]  {cycle_msg}")
+def countdown(duration):
     while duration:
         mins, secs = divmod(duration, 60)
         timer = "Timer: {:02d}:{:02d}".format(mins, secs)
@@ -39,20 +37,29 @@ def countdown(duration, cycle_msg):
         duration -= 1
 
 
+def show_progress(count, message=None, is_series=False):
+    current_time = str(datetime.now().time())[:5]
+    if not is_series:
+        print(f"[Cycle {count:02d} at {current_time}]  {message}")
+    else:
+        print(
+            f"[Series {count} at {current_time}]  Congratulations, you completed a set!"
+        )
+
+
 while True:
     try:
         next_cycle = set_cycle_type(cycle_number)
         cycle_duration = next_cycle[0]
         cycle_msg = next_cycle[1]
-        countdown(cycle_duration, cycle_msg)
+        show_progress(cycle_number, message=cycle_msg)
+        countdown(cycle_duration)
         cycle_number += 1
+
         # Congratulate user after completing a set of 8 cycles
         if cycle_number % 9 == 0:
             completed_series += 1
-            series_completion_time = str(datetime.now().time())[:5]
-            print(
-                f"[Series {completed_series} at {series_completion_time}]  Congratulations, you completed a set!"
-            )
+            show_progress(completed_series, is_series=True)
     except KeyboardInterrupt:
         print("\n\n[Session ended]  Goodbye!")
         exit()
