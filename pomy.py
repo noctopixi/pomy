@@ -3,6 +3,10 @@
 from time import sleep
 from datetime import datetime
 from sys import argv
+import platform
+from subprocess import run
+from shutil import which
+import threading
 
 minute_seconds = 60 if "--test" not in argv else 1
 cycle_number = 1
@@ -12,6 +16,28 @@ pomodoro_duration = 25 * minute_seconds
 short_break_duration = 5 * minute_seconds
 long_break_duration = 15 * minute_seconds
 
+operating_system = platform.system()
+sound_binary = None
+pomodoro_sfx = "sfx/pomodoro_sfx.wav"
+break_sfx = "sfx/break_sfx.wav"
+
+if not any(arg in argv for arg in ["--quiet", "-q"]):
+    # Check if a sound binary is present, default to aplay
+    if which("aplay"):
+        sound_binary = "aplay"
+    elif which("play"):
+        sound_binary = "play"
+    else:
+        print(
+            "Error: Unable to play sound effects. No supported sound binary found (aplay or play)."
+        )
+
+
+def play_sfx(sound_effect):
+    if operating_system == "Linux":
+        run(["aplay", "-q", sound_effect])
+
+
 # Text Format
 BOLD = "\033[1m"
 RESET_FORMAT = "\033[0m"
@@ -20,15 +46,23 @@ RESET_FORMAT = "\033[0m"
 def set_cycle_type(cycle_number: int):
     # Long break every 8th cycle
     if cycle_number % 8 == 0:
-        return (long_break_duration, "Long break - You deserve it! (15m)")
+        is_work = False
+        return (long_break_duration, "Long break - You deserve it! (15m)", is_work)
     # Short breaks are always even
     elif cycle_number % 2 == 0:
-        return (short_break_duration, "Short break - Drink water and stretch! (5m)")
+        is_work = False
+        return (
+            short_break_duration,
+            "Short break - Drink water and stretch! (5m)",
+            is_work,
+        )
     # Pomodoro cycles are always odd
     elif cycle_number % 2 != 0:
-        return (pomodoro_duration, "Work time - Let's do this! (25m)")
+        is_work = True
+        return (pomodoro_duration, "Work time - Let's do this! (25m)", is_work)
     else:
-        return (pomodoro_duration, "Work time - Let's do this! (25m)")
+        is_work = True
+        return (pomodoro_duration, "Work time - Let's do this! (25m)", is_work)
 
 
 # Functions
@@ -56,7 +90,20 @@ while True:
         next_cycle = set_cycle_type(cycle_number)
         cycle_duration = next_cycle[0]
         cycle_msg = next_cycle[1]
+        cycle_is_work = next_cycle[2]
+
+        # Display a timestamped progress message
         show_progress(cycle_number, message=cycle_msg)
+
+        # Play sound effect in a separate thread so the program does not hang
+        if sound_binary:
+            if cycle_is_work:
+                sound_effect = pomodoro_sfx
+            else:
+                sound_effect = break_sfx
+            sfx_thread = threading.Thread(target=play_sfx, args=(sound_effect,))
+            sfx_thread.start()
+
         countdown(cycle_duration)
         cycle_number += 1
 
@@ -64,6 +111,7 @@ while True:
         if cycle_number % 9 == 0:
             completed_series += 1
             show_progress(completed_series, is_series=True)
+
     except KeyboardInterrupt:
         print("\n\n[Session ended]  Good job!")
         exit()
