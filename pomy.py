@@ -6,6 +6,7 @@ from sys import argv
 import platform
 from subprocess import run
 from shutil import which
+import threading
 
 minute_seconds = 60 if "--test" not in argv else 1
 cycle_number = 1
@@ -26,6 +27,10 @@ if not any(arg in argv for arg in ["--quiet", "-q"]):
         sound_binary = "aplay"
     elif which("play"):
         sound_binary = "play"
+    else:
+        print(
+            "Error: Unable to play sound effects. No supported sound binary found (aplay or play)."
+        )
 
 
 def play_sfx(sound_effect):
@@ -86,12 +91,19 @@ while True:
         cycle_duration = next_cycle[0]
         cycle_msg = next_cycle[1]
         cycle_is_work = next_cycle[2]
+
+        # Display a timestamped progress message
         show_progress(cycle_number, message=cycle_msg)
+
+        # Play sound effect in a separate thread so the program does not hang
         if sound_binary:
             if cycle_is_work:
-                play_sfx(pomodoro_sfx)
+                sound_effect = pomodoro_sfx
             else:
-                play_sfx(break_sfx)
+                sound_effect = break_sfx
+            sfx_thread = threading.Thread(target=play_sfx, args=(sound_effect,))
+            sfx_thread.start()
+
         countdown(cycle_duration)
         cycle_number += 1
 
@@ -99,6 +111,7 @@ while True:
         if cycle_number % 9 == 0:
             completed_series += 1
             show_progress(completed_series, is_series=True)
+
     except KeyboardInterrupt:
         print("\n\n[Session ended]  Good job!")
         exit()
