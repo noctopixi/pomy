@@ -9,8 +9,8 @@ from shutil import which
 import threading
 
 minute_seconds = 60 if "--test" not in argv else 1
-cycle_number = 1
-completed_series = 0
+cycle_count = 1
+series_count = 0
 
 pomodoro_duration = 25 * minute_seconds
 short_break_duration = 5 * minute_seconds
@@ -75,25 +75,27 @@ def countdown(duration):
         duration -= 1
 
 
+# Messages are only used for pomo/break cycles.
+# When completing a series, the message is built in.
 def show_progress(count, message=None, is_series=False):
     current_time = str(datetime.now().time())[:5]
     if not is_series:
         print(f"{BOLD}[Cycle {count:02d} at {current_time}]{RESET_FORMAT}  {message}")
     else:
         print(
-            f"{BOLD}[Series {count} at {current_time}]{RESET_FORMAT}  Congratulations, you completed a set!"
+            f"{BOLD}[Series {count} at {current_time}]{RESET_FORMAT}  Congratulations, you completed a series!"
         )
 
 
 while True:
     try:
-        next_cycle = set_cycle_type(cycle_number)
+        next_cycle = set_cycle_type(cycle_count)
         cycle_duration = next_cycle[0]
         cycle_msg = next_cycle[1]
         cycle_is_work = next_cycle[2]
 
         # Display a timestamped progress message
-        show_progress(cycle_number, message=cycle_msg)
+        show_progress(cycle_count, message=cycle_msg)
 
         # Play sound effect in a separate thread so the program does not hang
         if sound_binary:
@@ -105,12 +107,12 @@ while True:
             sfx_thread.start()
 
         countdown(cycle_duration)
-        cycle_number += 1
+        cycle_count += 1
 
         # Congratulate user after completing a set of 8 cycles
-        if cycle_number % 9 == 0:
-            completed_series += 1
-            show_progress(completed_series, is_series=True)
+        if cycle_count % 9 == 0:
+            series_count += 1
+            show_progress(series_count, is_series=True)
 
     except KeyboardInterrupt:
         print("\n\n[Session ended]  Good job!")
