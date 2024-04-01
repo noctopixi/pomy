@@ -1,0 +1,32 @@
+class Color:
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    PURPLE = "\033[38;5;165m"
+    ORANGE = "\033[38;5;208m"
+    PINK = "\033[38;5;205m"
+    SKY_BLUE = "\033[38;5;111m"
+
+    BG_RED = "\033[41m"
+    BG_GREEN = "\033[42m"
+    BG_YELLOW = "\033[43m"
+    BG_BLUE = "\033[44m"
+    BG_MAGENTA = "\033[45m"
+    BG_CYAN = "\033[46m"
+    BG_WHITE = "\033[47m"
+    BG_PURPLE = "\033[48;5;165m"
+    BG_ORANGE = "\033[48;5;208m"
+    BG_PINK = "\033[48;5;205m"
+    BG_SKY_BLUE = "\033[48;5;111m"
+
+
+class Format:
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    BLINK = "\033[5m"
+    INVERSE = "\033[7m"
+    RESET = "\033[0m"
