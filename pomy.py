@@ -22,6 +22,32 @@ sound_binary = None
 pomodoro_sfx = "sfx/pomodoro_sfx.wav"
 break_sfx = "sfx/break_sfx.wav"
 
+MAX_TIMER_CHARACTERS = 32
+
+# Text format and colors
+if "--no-color" in argv:
+    ORANGE = ""
+    SKY_BLUE = ""
+    YELLOW = ""
+else:
+    from text_format import Colors
+
+    ORANGE = Colors.ORANGE
+    SKY_BLUE = Colors.SKY_BLUE
+    YELLOW = Colors.YELLOW
+
+if "--no-format" in argv:
+    BOLD = ""
+    UNDERLINE = ""
+    RESET_FORMAT = ""
+else:
+    from text_format import Format
+
+    BOLD = Format.BOLD
+    UNDERLINE = Format.UNDERLINE
+    RESET_FORMAT = Format.RESET
+
+
 if not any(arg in argv for arg in ["--quiet", "-q"]):
     # Check if a sound binary is present, default to aplay
     if which("aplay"):
@@ -37,11 +63,6 @@ if not any(arg in argv for arg in ["--quiet", "-q"]):
 def play_sfx(sound_effect):
     if operating_system == "Linux":
         run(["aplay", "-q", sound_effect])
-
-
-# Text Format
-BOLD = "\033[1m"
-RESET_FORMAT = "\033[0m"
 
 
 def set_cycle_type():
@@ -86,20 +107,30 @@ def countdown(duration):
 def show_progress(count, message=None, is_series=False, is_work=False):
     current_time = str(datetime.now().time())[:5]
     if is_series:
-        print(f"{BOLD}[Series {count} at {current_time}]{RESET_FORMAT}")
+        # Print enough whitespace to delete the Timer: MM:SS line
+        print(" " * MAX_TIMER_CHARACTERS)
+        print(
+            f"{YELLOW}{BOLD}{UNDERLINE}Series {count} at {current_time}{RESET_FORMAT}"
+        )
 
     elif is_work:
-        print(f"{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {message}")
+        print(
+            f"{ORANGE}{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {message}"
+        )
     elif not is_work:
         global global_cycle_count
         # Long breaks occur every 8th cycle
         if global_cycle_count % 8 == 0:
-            print(f"{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {message}")
+            print(
+                f"{SKY_BLUE}{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {message}"
+            )
 
         # Short breaks are always even cycles
         elif global_cycle_count % 2 == 0:
             is_work = False
-            print(f"{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {message}")
+            print(
+                f"{SKY_BLUE}{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {message}"
+            )
 
 
 while True:
@@ -132,6 +163,7 @@ while True:
 
         # Congratulate user after completing a set of 8 cycles
         if global_cycle_count % 9 == 0:
+            global_cycle_count = 1
             pomodoro_count = 0
             series_count += 1
 
