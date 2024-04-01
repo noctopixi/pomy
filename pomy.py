@@ -13,9 +13,9 @@ global_cycle_count = 1
 series_count = 1
 pomodoro_count = 0
 
-pomodoro_duration = 25 * minute_seconds
-short_break_duration = 5 * minute_seconds
-long_break_duration = 15 * minute_seconds
+pomodoro_duration = 25 * minute_seconds if "--test" not in argv else 1
+short_break_duration = 5 * minute_seconds if "--test" not in argv else 1
+long_break_duration = 15 * minute_seconds if "--test" not in argv else 1
 
 operating_system = platform.system()
 sound_binary = None
@@ -89,19 +89,17 @@ def show_progress(count, message=None, is_series=False, is_work=False):
         print(f"{BOLD}[Series {count} at {current_time}]{RESET_FORMAT}")
 
     elif is_work:
-        print(
-            f"{BOLD}[Pomodoro {count:02d} at {current_time}]{RESET_FORMAT}  {message}"
-        )
+        print(f"{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {message}")
     elif not is_work:
         global global_cycle_count
         # Long breaks occur every 8th cycle
         if global_cycle_count % 8 == 0:
-            print(f"{BOLD}[Long break at {current_time}]{RESET_FORMAT}  {message}")
+            print(f"{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {message}")
 
         # Short breaks are always even cycles
         elif global_cycle_count % 2 == 0:
             is_work = False
-            print(f"{BOLD}[Mini break at {current_time}]{RESET_FORMAT}  {message}")
+            print(f"{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {message}")
 
 
 while True:
