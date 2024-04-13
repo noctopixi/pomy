@@ -59,10 +59,29 @@ if not any(arg in argv for arg in ["--quiet", "-q"]):
             "Error: Unable to play sound effects. No supported sound binary found (aplay or play)."
         )
 
+if not any(arg in argv for arg in ["--disable_notifications", "-d"]):
+    display_toast = True
+else:
+    display_toast = False
+
 
 def play_sfx(sound_effect):
     if operating_system == "Linux":
         run(["aplay", "-q", sound_effect])
+
+
+def toast(msg):
+    if operating_system != "Linux":
+        print(
+            "Notifications are not yet implemented for your operating system - sorry!"
+        )
+    elif operating_system == "Linux":
+        if which("notify-send"):
+            run(["notify-send", "Pomy", msg])
+        else:
+            print(
+                "Unable to display notification toasts. notify-send is not installed on this device."
+            )
 
 
 def set_cycle_type():
@@ -104,33 +123,37 @@ def countdown(duration):
 
 # Messages are only used for pomo/break cycles.
 # When completing a series, the message is built in.
-def show_progress(count, message=None, is_series=False, is_work=False):
+def show_progress(count, progress_message=None, is_series=False, is_work=False):
     current_time = str(datetime.now().time())[:5]
+
     if is_series:
-        # Print enough whitespace to delete the Timer: MM:SS line
-        print(" " * MAX_TIMER_CHARACTERS)
-        print(
+        toast_msg = f"Series {count} at {current_time}"
+        terminal_msg = (
             f"{YELLOW}{BOLD}{UNDERLINE}Series {count} at {current_time}{RESET_FORMAT}"
         )
+        # Print enough whitespace to delete the Timer: MM:SS line in the terminal
+        print(" " * MAX_TIMER_CHARACTERS)
 
     elif is_work:
-        print(
-            f"{ORANGE}{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {message}"
-        )
-    elif not is_work:
+        toast_msg = f"[{current_time} - Pomodoro {count}]\n{progress_message}"
+        terminal_msg = f"{ORANGE}{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {progress_message}"
+
+    # Break messages
+    else:
         global global_cycle_count
         # Long breaks occur every 8th cycle
         if global_cycle_count % 8 == 0:
-            print(
-                f"{SKY_BLUE}{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {message}"
-            )
+            toast_msg = f"[{current_time} - Long break]\n{progress_message}"
+            terminal_msg = f"{SKY_BLUE}{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {progress_message}"
 
-        # Short breaks are always even cycles
-        elif global_cycle_count % 2 == 0:
-            is_work = False
-            print(
-                f"{SKY_BLUE}{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {message}"
-            )
+        # Short breaks are always even cycles (cycle count % 2 = 0)
+        else:
+            toast_msg = f"[{current_time} - Mini break]\n{progress_message}"
+            terminal_msg = f"{SKY_BLUE}{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {progress_message}"
+
+    if display_toast:
+        toast(toast_msg)
+    print(terminal_msg)
 
 
 while True:
@@ -147,7 +170,7 @@ while True:
             pomodoro_count += 1
 
         # Display a timestamped progress message
-        show_progress(pomodoro_count, message=cycle_msg, is_work=cycle_is_work)
+        show_progress(pomodoro_count, progress_message=cycle_msg, is_work=cycle_is_work)
 
         # Play sound effect in a separate thread so the program does not hang
         if sound_binary:
