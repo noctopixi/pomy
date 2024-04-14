@@ -10,7 +10,7 @@ import threading
 
 minute_seconds = 60 if "--test" not in argv else 1
 global_cycle_count = 1
-series_count = 1
+set_count = 1
 pomodoro_count = 0
 
 pomodoro_duration = 25 * minute_seconds if "--test" not in argv else 1
@@ -59,10 +59,29 @@ if not any(arg in argv for arg in ["--quiet", "-q"]):
             "Error: Unable to play sound effects. No supported sound binary found (aplay or play)."
         )
 
+if not any(arg in argv for arg in ["--disable-notifications", "-d"]):
+    display_toast = True
+else:
+    display_toast = False
+
 
 def play_sfx(sound_effect):
     if operating_system == "Linux":
         run(["aplay", "-q", sound_effect])
+
+
+def toast(msg):
+    if operating_system != "Linux":
+        print(
+            "Notifications are not yet implemented for your operating system - sorry!"
+        )
+    elif operating_system == "Linux":
+        if which("notify-send"):
+            run(["notify-send", "Pomy", msg])
+        else:
+            print(
+                "Unable to display notification toasts. notify-send is not installed on this device."
+            )
 
 
 def set_cycle_type():
@@ -72,7 +91,7 @@ def set_cycle_type():
         is_work = False
         return (
             long_break_duration,
-            "You finished a series! Enjoy your well deserved rest! (15m)",
+            "You finished a set! Enjoy your well deserved rest!",
             is_work,
         )
     # Short breaks are always even cycles
@@ -80,16 +99,16 @@ def set_cycle_type():
         is_work = False
         return (
             short_break_duration,
-            "Drink water, breathe deeply and stretch! (5m)",
+            "Drink water, breathe deeply and stretch!",
             is_work,
         )
     # Pomodoro cycles are always odd
     elif global_cycle_count % 2 != 0:
         is_work = True
-        return (pomodoro_duration, "Work time - Let's do this! (25m)", is_work)
+        return (pomodoro_duration, "Work time - Let's do this!", is_work)
     else:
         is_work = True
-        return (pomodoro_duration, "Work time - Let's do this! (25m)", is_work)
+        return (pomodoro_duration, "Work time - Let's do this!", is_work)
 
 
 # Functions
@@ -102,41 +121,72 @@ def countdown(duration):
         duration -= 1
 
 
-# Messages are only used for pomo/break cycles.
-# When completing a series, the message is built in.
-def show_progress(count, message=None, is_series=False, is_work=False):
+def show_progress(count, progress_message=None, is_set=False, is_work=False):
+    """
+
+    This function handles showing all progress messages, such as the current set,
+    or the timestamp and message of a new cycle.
+
+    Depending on the cycle type, it will construct two messages that will display the
+    exact same information, each one in a format best suited for terminal or toast notifications.
+
+    If the user has not disabled formatted or colored output, the {CONSTANTS} in terminal messages
+    will evaluate to ANSI escape codes that will format the text to make it easier to read.
+
+    Terminal notifications are always displayed. They look like this:
+    [HH:MM - Pomodoro# or Break Type]  Cycle message (cycle duration)
+
+    Desktop notifications are displayed by default, but can be disabled using --disable-notifications or -d.
+    On Linux, they depend on notify-send. They look like this:
+    Pomy
+    HH:MM - Pomodoro# or Break Type
+    Duration: (cycle_duration)
+    Cycle message
+
+    """
     current_time = str(datetime.now().time())[:5]
-    if is_series:
-        # Print enough whitespace to delete the Timer: MM:SS line
-        print(" " * MAX_TIMER_CHARACTERS)
-        print(
-            f"{YELLOW}{BOLD}{UNDERLINE}Series {count} at {current_time}{RESET_FORMAT}"
+
+    if is_set:
+        toast_msg = f"Set {count} at {current_time}"
+        terminal_msg = (
+            f"{YELLOW}{BOLD}{UNDERLINE}Set {count} at {current_time}{RESET_FORMAT}"
         )
+        # Print enough whitespace to delete the Timer: MM:SS line in the terminal
+        print(" " * MAX_TIMER_CHARACTERS)
 
     elif is_work:
-        print(
-            f"{ORANGE}{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {message}"
-        )
-    elif not is_work:
+        minutes = "25 minutes"
+        toast_msg = f"{current_time} - Pomodoro {count}\nDuration: {minutes}\n{progress_message}"
+        terminal_msg = f"{ORANGE}{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {progress_message} ({minutes})"
+
+    # Break messages
+    else:
         global global_cycle_count
         # Long breaks occur every 8th cycle
         if global_cycle_count % 8 == 0:
-            print(
-                f"{SKY_BLUE}{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {message}"
+            minutes = "15 minutes"
+            toast_msg = (
+                f"{current_time} - Long break\nDuration: {minutes}\n{progress_message}"
             )
+            terminal_msg = f"{SKY_BLUE}{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {progress_message} ({minutes})"
 
-        # Short breaks are always even cycles
-        elif global_cycle_count % 2 == 0:
-            is_work = False
-            print(
-                f"{SKY_BLUE}{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {message}"
+        # Short breaks are always even cycles (cycle count % 2 = 0)
+        else:
+            minutes = "5 minutes"
+            toast_msg = (
+                f"{current_time} - Mini break\nDuration: {minutes}\n{progress_message}"
             )
+            terminal_msg = f"{SKY_BLUE}{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {progress_message} ({minutes})"
+
+    if display_toast:
+        toast(toast_msg)
+    print(terminal_msg)
 
 
 while True:
     try:
         if pomodoro_count == 0:
-            show_progress(series_count, is_series=True)
+            show_progress(set_count, is_set=True)
 
         next_cycle = set_cycle_type()
         cycle_duration = next_cycle[0]
@@ -147,7 +197,7 @@ while True:
             pomodoro_count += 1
 
         # Display a timestamped progress message
-        show_progress(pomodoro_count, message=cycle_msg, is_work=cycle_is_work)
+        show_progress(pomodoro_count, progress_message=cycle_msg, is_work=cycle_is_work)
 
         # Play sound effect in a separate thread so the program does not hang
         if sound_binary:
@@ -165,7 +215,7 @@ while True:
         if global_cycle_count % 9 == 0:
             global_cycle_count = 1
             pomodoro_count = 0
-            series_count += 1
+            set_count += 1
 
     except KeyboardInterrupt:
         print("\n\n[Session ended]  Good job!")
