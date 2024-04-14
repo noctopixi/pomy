@@ -121,9 +121,29 @@ def countdown(duration):
         duration -= 1
 
 
-# Messages are only used for pomo/break cycles.
-# When completing a set, the message is built in.
 def show_progress(count, progress_message=None, is_set=False, is_work=False):
+    """
+
+    This function handles showing all progress messages, such as the current set,
+    or the timestamp and message of a new cycle.
+
+    Depending on the cycle type, it will construct two messages that will display the
+    exact same information, each one in a format best suited for terminal or toast notifications.
+
+    If the user has not disabled formatted or colored output, the {CONSTANTS} in terminal messages
+    will evaluate to ANSI escape codes that will format the text to make it easier to read.
+
+    Terminal notifications are always displayed. They look like this:
+    [HH:MM - Pomodoro# or Break Type]  Cycle message (cycle duration)
+
+    Desktop notifications are displayed by default, but can be disabled using --disable-notifications or -d.
+    On Linux, they depend on notify-send. They look like this:
+    Pomy
+    HH:MM - Pomodoro# or Break Type
+    Duration: (cycle_duration)
+    Cycle message
+
+    """
     current_time = str(datetime.now().time())[:5]
 
     if is_set:
