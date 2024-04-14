@@ -91,7 +91,7 @@ def set_cycle_type():
         is_work = False
         return (
             long_break_duration,
-            "You finished a series! Enjoy your well deserved rest! (15m)",
+            "You finished a series! Enjoy your well deserved rest!",
             is_work,
         )
     # Short breaks are always even cycles
@@ -99,16 +99,16 @@ def set_cycle_type():
         is_work = False
         return (
             short_break_duration,
-            "Drink water, breathe deeply and stretch! (5m)",
+            "Drink water, breathe deeply and stretch!",
             is_work,
         )
     # Pomodoro cycles are always odd
     elif global_cycle_count % 2 != 0:
         is_work = True
-        return (pomodoro_duration, "Work time - Let's do this! (25m)", is_work)
+        return (pomodoro_duration, "Work time - Let's do this!", is_work)
     else:
         is_work = True
-        return (pomodoro_duration, "Work time - Let's do this! (25m)", is_work)
+        return (pomodoro_duration, "Work time - Let's do this!", is_work)
 
 
 # Functions
@@ -135,21 +135,28 @@ def show_progress(count, progress_message=None, is_series=False, is_work=False):
         print(" " * MAX_TIMER_CHARACTERS)
 
     elif is_work:
-        toast_msg = f"[{current_time} - Pomodoro {count}]\n{progress_message}"
-        terminal_msg = f"{ORANGE}{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {progress_message}"
+        minutes = "25 minutes"
+        toast_msg = f"{current_time} - Pomodoro {count}\nDuration: {minutes}\n{progress_message}"
+        terminal_msg = f"{ORANGE}{BOLD}[{current_time} - Pomodoro {count}]{RESET_FORMAT}  {progress_message} ({minutes})"
 
     # Break messages
     else:
         global global_cycle_count
         # Long breaks occur every 8th cycle
         if global_cycle_count % 8 == 0:
-            toast_msg = f"[{current_time} - Long break]\n{progress_message}"
-            terminal_msg = f"{SKY_BLUE}{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {progress_message}"
+            minutes = "15 minutes"
+            toast_msg = (
+                f"{current_time} - Long break\nDuration: {minutes}\n{progress_message}"
+            )
+            terminal_msg = f"{SKY_BLUE}{BOLD}[{current_time} - Long break]{RESET_FORMAT}  {progress_message} ({minutes})"
 
         # Short breaks are always even cycles (cycle count % 2 = 0)
         else:
-            toast_msg = f"[{current_time} - Mini break]\n{progress_message}"
-            terminal_msg = f"{SKY_BLUE}{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {progress_message}"
+            minutes = "5 minutes"
+            toast_msg = (
+                f"{current_time} - Mini break\nDuration: {minutes}\n{progress_message}"
+            )
+            terminal_msg = f"{SKY_BLUE}{BOLD}[{current_time} - Mini break]{RESET_FORMAT}  {progress_message} ({minutes})"
 
     if display_toast:
         toast(toast_msg)
