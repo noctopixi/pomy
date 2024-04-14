@@ -10,7 +10,7 @@ import threading
 
 minute_seconds = 60 if "--test" not in argv else 1
 global_cycle_count = 1
-series_count = 1
+set_count = 1
 pomodoro_count = 0
 
 pomodoro_duration = 25 * minute_seconds if "--test" not in argv else 1
@@ -59,7 +59,7 @@ if not any(arg in argv for arg in ["--quiet", "-q"]):
             "Error: Unable to play sound effects. No supported sound binary found (aplay or play)."
         )
 
-if not any(arg in argv for arg in ["--disable_notifications", "-d"]):
+if not any(arg in argv for arg in ["--disable-notifications", "-d"]):
     display_toast = True
 else:
     display_toast = False
@@ -91,7 +91,7 @@ def set_cycle_type():
         is_work = False
         return (
             long_break_duration,
-            "You finished a series! Enjoy your well deserved rest!",
+            "You finished a set! Enjoy your well deserved rest!",
             is_work,
         )
     # Short breaks are always even cycles
@@ -122,14 +122,14 @@ def countdown(duration):
 
 
 # Messages are only used for pomo/break cycles.
-# When completing a series, the message is built in.
-def show_progress(count, progress_message=None, is_series=False, is_work=False):
+# When completing a set, the message is built in.
+def show_progress(count, progress_message=None, is_set=False, is_work=False):
     current_time = str(datetime.now().time())[:5]
 
-    if is_series:
-        toast_msg = f"Series {count} at {current_time}"
+    if is_set:
+        toast_msg = f"Set {count} at {current_time}"
         terminal_msg = (
-            f"{YELLOW}{BOLD}{UNDERLINE}Series {count} at {current_time}{RESET_FORMAT}"
+            f"{YELLOW}{BOLD}{UNDERLINE}Set {count} at {current_time}{RESET_FORMAT}"
         )
         # Print enough whitespace to delete the Timer: MM:SS line in the terminal
         print(" " * MAX_TIMER_CHARACTERS)
@@ -166,7 +166,7 @@ def show_progress(count, progress_message=None, is_series=False, is_work=False):
 while True:
     try:
         if pomodoro_count == 0:
-            show_progress(series_count, is_series=True)
+            show_progress(set_count, is_set=True)
 
         next_cycle = set_cycle_type()
         cycle_duration = next_cycle[0]
@@ -195,7 +195,7 @@ while True:
         if global_cycle_count % 9 == 0:
             global_cycle_count = 1
             pomodoro_count = 0
-            series_count += 1
+            set_count += 1
 
     except KeyboardInterrupt:
         print("\n\n[Session ended]  Good job!")
